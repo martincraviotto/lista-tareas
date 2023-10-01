@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Icon } from '@iconify/react';
 
 import { TareaItem } from './TareaItem'
+import { TareaItemForm } from './TareaItemForm';
 
 export const TareaList = () => {
     const lista = [
@@ -22,6 +23,10 @@ export const TareaList = () => {
         }
     ]
 
+  const [setshowDetalle, setSetshowDetalle] = useState(false);
+
+  const [tareaActiva, setTareaActiva] = useState();
+
   const [listaTareas, setListaTareas] = useState(lista);
 
   const handleMarkTask = (tarea) => {
@@ -31,23 +36,61 @@ export const TareaList = () => {
             else 
                 return item;
         });
-        setListaTareas(listUpdated);
+        setListaTareas(listUpdated);        
+        setTareaActiva(tarea);
   }  
 
   const handleDeleteTask = (tarea) => {
         const listUpdated = listaTareas.filter(item => item.id !== tarea.id);                
         setListaTareas(listUpdated);
+        localStorage.setItem('listaTareas',JSON.stringify(listUpdated));        
   }  
+
+  const handleNewTask = () =>{    
+    const lastTarea = listaTareas.slice(-1).pop();  
+    setTareaActiva({
+        id:lastTarea !== undefined  ? lastTarea.id + 1 : 1,
+        descripcion:'',
+        marca:false,
+    });
+  }
+
+  const handleGuardarTarea =({id,descripcion:auxDescripcion,marca})=>{  
+    let newListTareas = listaTareas.filter(tarea => tarea.id !== id);
+    const newListTareasUpdated = [...newListTareas,{id,descripcion:auxDescripcion,marca}];    
+    setListaTareas(newListTareasUpdated);
+    setTareaActiva();
+    localStorage.setItem('listaTareas',JSON.stringify(newListTareasUpdated));
+  }
+
+  const handleCancelTask =()=>{
+    setTareaActiva(null);
+  }
+
+  
+
+   useEffect(() => {
+
+    let listaTareasStored = null;
+    if(localStorage.getItem('listaTareas')!== null){
+        listaTareasStored = JSON.parse(localStorage.getItem('listaTareas'));     
+        setListaTareas(listaTareasStored);    
+    } else
+        setListaTareas([]);
+
+   }, []);
+  
 
   return (
     
     <div className="container-fluid mt-5">  
         
         <div className="d-flex justify-content-center">
-            <div className="">
+            <div className="mx-5">
                 <div className="d-flex justify-content-between">
                     <h1 className='text-center mb-3 align-items-center'>Lista de Tareas</h1>
-                    <Icon icon="carbon:add-filled" color="#d1e7dd" width="60" />                    
+                    <Icon icon="carbon:add-filled" color="#d1e7dd" width="60" 
+                     onClick={handleNewTask}/>                    
                 </div>                    
                 <div className="list-group">
                     {listaTareas.map((item)=>{
@@ -60,9 +103,18 @@ export const TareaList = () => {
             </div>
             
             <div className="col-12 col-md-4">
-                <h1 className='text-center mb-3'>
-                    Detalle de Tarea                     
-                </h1>                
+                <div className="mx-5">
+                    <div className="d-flex justify-content-between">
+                        <h1 className='text-center mb-3 align-items-center'>Detalle Tarea</h1>                                     
+                    </div>  
+                    {!!tareaActiva
+                        ?<TareaItemForm {...tareaActiva} 
+                            handleGuardarTarea={handleGuardarTarea} 
+                            handleCancelTask={handleCancelTask}
+                            />
+                        :''
+                    }              
+                </div>    
             </div>
         </div>
     </div>
